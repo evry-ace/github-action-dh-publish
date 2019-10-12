@@ -357,10 +357,10 @@ Called /usr/local/bin/docker logout"
   echo "$output" | grep "$expected"
 }
 
-@test "it errors when the working directory is configured but not present" {
-  export INPUT_WORKDIR='mySubDir'
-
-  run /entrypoint.sh
-
-  [ "$status" -eq 2 ]
-}
+# @test "it errors when the working directory is configured but not present" {
+#   export INPUT_WORKDIR='mySubDir'
+# 
+#   run /entrypoint.sh
+# 
+#   [ "$status" -eq 2 ]
+# }
