@@ -16,8 +16,8 @@ function main() {
   translateDockerTag
   DOCKERNAME="${INPUT_NAME}:${TAG}"
 
-  if uses "${INPUT_WORKDIR}"; then
-    changeWorkingDirectory
+  if not "${INPUT_WORKDIR}"; then
+    INPUT_WORKDIR="."
   fi
 
   echo ${INPUT_PASSWORD} | docker login -u ${INPUT_USERNAME} --password-stdin ${INPUT_REGISTRY}
@@ -39,6 +39,7 @@ function main() {
   else
     pushWithoutSnapshot
   fi
+  
   echo ::set-output name=tag::"${TAG}"
 
   docker logout
@@ -87,10 +88,6 @@ function isPullRequest() {
   [ $(echo "${GITHUB_REF}" | sed -e "s/refs\/pull\///g") != "${GITHUB_REF}" ]
 }
 
-function changeWorkingDirectory() {
-  cd "${INPUT_WORKDIR}"
-}
-
 function useCustomDockerfile() {
   BUILDPARAMS="$BUILDPARAMS -f ${INPUT_DOCKERFILE}"
 }
@@ -112,19 +109,23 @@ function uses() {
   [ ! -z "${1}" ]
 }
 
+function not() {
+  [ -z "${1}" ]
+}
+
 function pushWithSnapshot() {
   local TIMESTAMP=`date +%Y%m%d%H%M%S`
   local SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-6)
   local SNAPSHOT_TAG="${TIMESTAMP}${SHORT_SHA}"
   local SHA_DOCKER_NAME="${INPUT_NAME}:${SNAPSHOT_TAG}"
-  docker build $BUILDPARAMS -t ${DOCKERNAME} -t ${SHA_DOCKER_NAME} .
+  docker build $BUILDPARAMS -t ${DOCKERNAME} -t ${SHA_DOCKER_NAME} ${INPUT_WORKDIR}
   docker push ${DOCKERNAME}
   docker push ${SHA_DOCKER_NAME}
   echo ::set-output name=snapshot-tag::"${SNAPSHOT_TAG}"
 }
 
 function pushWithoutSnapshot() {
-  docker build $BUILDPARAMS -t ${DOCKERNAME} .
+  docker build $BUILDPARAMS -t ${DOCKERNAME} ${INPUT_WORKDIR}
   docker push ${DOCKERNAME}
 }
 
